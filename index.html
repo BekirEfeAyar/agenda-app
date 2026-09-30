@@ -46,7 +46,7 @@
   body.native{padding:0;align-items:stretch}
   body.native .stage{max-width:none;border-radius:0;border:0;min-height:100dvh;max-height:none;box-shadow:none}
   body.native .notch,body.native .status{display:none}
-  body.native header{padding-top:calc(10px + env(safe-area-inset-top))}
+  body.native header{padding-top:calc(30px + env(safe-area-inset-top))}
   .stage::before{
     content:"";position:absolute;inset:0;pointer-events:none;
     background:radial-gradient(400px 250px at 80% -20px, rgba(255,190,152,.12), transparent 60%),
@@ -61,7 +61,7 @@
   .status .icons{display:flex;gap:6px;align-items:center;opacity:.9}
 
   /* header */
-  header{display:flex;justify-content:space-between;align-items:flex-start;padding:10px 22px 12px}
+  header{display:flex;justify-content:space-between;align-items:flex-start;padding:16px 22px 14px}
   header h1{font-size:28px;letter-spacing:-.5px;font-weight:800;animation:slideDown .7s var(--ease) both}
   header p{color:var(--muted);font-size:13.5px;margin-top:2px;animation:slideDown .7s .08s var(--ease) both}
   .bell{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.06);border:1px solid var(--line);display:grid;place-items:center;cursor:pointer;transition:.3s var(--ease);position:relative;animation:slideDown .7s .12s var(--ease) both}
@@ -70,7 +70,7 @@
   .bell:hover{background:rgba(255,255,255,.12)}
 
   /* week card */
-  .week-card{margin:4px 16px 12px;background:linear-gradient(180deg,var(--card2),var(--card));border:1px solid var(--line);border-radius:var(--radius);padding:14px 12px 14px;box-shadow:0 12px 30px rgba(0,0,0,.35);animation:rise .7s .15s var(--ease) both}
+  .week-card{margin:10px 16px 12px;background:linear-gradient(180deg,var(--card2),var(--card));border:1px solid var(--line);border-radius:var(--radius);padding:14px 12px 14px;box-shadow:0 12px 30px rgba(0,0,0,.35);animation:rise .7s .15s var(--ease) both}
   .week-top{display:flex;align-items:center;justify-content:space-between;padding:0 6px 12px}
   .week-top button{width:28px;height:28px;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--text);cursor:pointer;font-size:16px;line-height:1;transition:.25s var(--ease)}
   .week-top button:active{transform:scale(.85);background:var(--peach);color:#222;border-color:transparent}
@@ -266,7 +266,6 @@
       <div class="card" style="text-align:center">
         <div class="avatar" id="avatar">?</div>
         <h2 id="profileName" contenteditable="true" data-ph="İsminizi yazın ✏️"></h2>
-        <p style="color:var(--muted);font-size:13px;margin-top:4px">Product Designer • Istanbul</p>
         <div class="stat-row">
           <div class="stat"><b id="stEvents">3</b><span>Events</span></div>
           <div class="stat"><b id="stDone">1</b><span>Done</span></div>
