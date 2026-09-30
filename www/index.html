@@ -178,6 +178,9 @@
 
   /* profile */
   .avatar{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#ffd0ad,#ff8e6b);display:grid;place-items:center;font-size:28px;font-weight:800;color:#3a2417;margin:6px auto 10px;box-shadow:0 10px 30px var(--peach-glow)}
+  #profileName{outline:none;border-bottom:1px dashed rgba(255,255,255,.22);display:inline-block;min-width:80px;padding:0 10px 3px;transition:border-color .25s}
+  #profileName:focus{border-color:var(--peach)}
+  #profileName:empty::before{content:attr(data-ph);color:var(--muted2);font-size:15px;font-weight:500}
   .stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
   .stat{background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:16px;padding:12px 6px;text-align:center}
   .stat b{font-size:18px;display:block}.stat span{font-size:11px;color:var(--muted)}
@@ -261,8 +264,8 @@
     <!-- PROFILE VIEW -->
     <section class="view" id="view-profile">
       <div class="card" style="text-align:center">
-        <div class="avatar">M</div>
-        <h2>Murat</h2>
+        <div class="avatar" id="avatar">?</div>
+        <h2 id="profileName" contenteditable="true" data-ph="İsminizi yazın ✏️"></h2>
         <p style="color:var(--muted);font-size:13px;margin-top:4px">Product Designer • Istanbul</p>
         <div class="stat-row">
           <div class="stat"><b id="stEvents">3</b><span>Events</span></div>
@@ -333,6 +336,7 @@ let state = JSON.parse(localStorage.getItem('agenda-v2')||'null') || {
   notes:[],
   quick:''
 };
+if(typeof state.name!=='string')state.name='';
 function save(){localStorage.setItem('agenda-v2',JSON.stringify(state));}
 function toast(m){const el=$('#toast');el.textContent=m;el.classList.add('show');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('show'),1800);}
 
@@ -413,6 +417,12 @@ function renderNotes(){
 renderSched();renderTasks();renderNotes();
 $('#quickNote').innerText=state.quick;
 $('#quickNote').oninput=e=>{state.quick=e.target.innerText;save();};
+
+// profile name
+function drawAvatar(){$('#avatar').textContent=(state.name.trim().charAt(0).toUpperCase()||'?');}
+$('#profileName').innerText=state.name;drawAvatar();
+$('#profileName').oninput=e=>{state.name=e.target.innerText.replace(/\n/g,'');save();drawAvatar();};
+$('#profileName').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();e.target.blur();toast('İsim kaydedildi ✓');}};
 
 // nav
 $$('.nav-btn').forEach(b=>b.onclick=()=>{
