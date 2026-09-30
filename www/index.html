@@ -37,6 +37,7 @@
     background:radial-gradient(120% 60% at 50% 0%, #2e2e31 0%, var(--bg) 55%) , var(--bg);
     position:relative;
     overflow:hidden;
+    display:flex;flex-direction:column;
   }
   @media(min-width:480px){
     body{padding:24px 0;align-items:flex-start}
@@ -44,7 +45,9 @@
   }
   /* native (APK) fullscreen: hide fake phone chrome */
   body.native{padding:0;align-items:stretch}
-  body.native .stage{max-width:none;border-radius:0;border:0;min-height:100dvh;max-height:none;box-shadow:none}
+  body.native .stage{max-width:none;border-radius:0;border:0;min-height:100dvh;max-height:none;box-shadow:none;height:100dvh}
+  body.native main{overflow-y:auto;scrollbar-width:none}
+  body.native main::-webkit-scrollbar{width:0;display:none}
   body.native .notch,body.native .status{display:none}
   body.native header{padding-top:calc(30px + env(safe-area-inset-top))}
   .stage::before{
@@ -143,7 +146,7 @@
   .nav-btn:active{transform:scale(.9)}
 
   /* views */
-  main{padding-bottom:6px;min-height:420px}
+  main{padding-bottom:6px;min-height:420px;flex:1}
   .view{display:none}
   .view.show{display:block}
   .view.show > *{animation:viewIn .45s var(--ease) both}
