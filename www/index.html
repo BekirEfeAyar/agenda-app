@@ -128,8 +128,9 @@
 
   .quick{margin-top:12px;background:rgba(0,0,0,.22);border:1px solid var(--line);border-radius:16px;padding:12px;transition:.3s}
   .quick h4{font-size:14px;margin-bottom:4px}
-  .quick p{font-size:12.5px;color:var(--muted);line-height:1.5;outline:none}
+  .quick p{font-size:12.5px;color:var(--muted);line-height:1.5;outline:none;min-height:20px}
   .quick p:focus{color:var(--text)}
+  .quick p:empty::before{content:attr(data-ph);color:var(--muted2)}
   .quick:focus-within{border-color:rgba(255,190,152,.4)}
 
   /* bottom nav */
@@ -223,7 +224,7 @@
         <button class="add-line" id="openTask">+ Add task</button>
         <div class="quick">
           <h4>Quick Notes</h4>
-          <p id="quickNote" contenteditable="true">Meeting ideas for next week...</p>
+          <p id="quickNote" contenteditable="true" data-ph="Hızlı notunu buraya yaz..."></p>
         </div>
       </div>
     </section>
@@ -325,22 +326,14 @@
 <script>
 if(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform())document.body.classList.add('native');
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
-let state = JSON.parse(localStorage.getItem('agenda-v1')||'null') || {
-  sched:[
-    {start:'08:30 AM',end:'09:15 AM',title:'Yoga Session',cat:'Pastel'},
-    {start:'09:30 AM',end:'10:30 AM',title:'Team Sync • Marketing',cat:'Peach'},
-    {start:'11:00 AM',end:'12:30 PM',title:'Product Sync • Design',cat:'Pastel'},
-  ],
-  tasks:[
-    {t:'1. Finalize UI Mockups',done:false,tag:'checked',tagLabel:'Checked'},
-    {t:'2. Review Feedback',done:false,tag:'gray',tagLabel:'Blue/Gray'},
-    {t:'3. Design Case Study',done:false,tag:'ppeach',tagLabel:'Pastel Peach'},
-    {t:'4. Client Call (2PM)',done:false,tag:'pblue',tagLabel:'Pastel Blue'},
-  ],
-  notes:[{t:'Meeting ideas for next week...',d:'Oct 25'}],
-  quick:'Meeting ideas for next week...'
+localStorage.removeItem('agenda-v1');
+let state = JSON.parse(localStorage.getItem('agenda-v2')||'null') || {
+  sched:[],
+  tasks:[],
+  notes:[],
+  quick:''
 };
-function save(){localStorage.setItem('agenda-v1',JSON.stringify(state));}
+function save(){localStorage.setItem('agenda-v2',JSON.stringify(state));}
 function toast(m){const el=$('#toast');el.textContent=m;el.classList.add('show');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('show'),1800);}
 
 // clock
@@ -377,6 +370,7 @@ renderWeek();updateDateLine();
 // schedule
 function renderSched(){
   const box=$('#sched');box.innerHTML='';
+  if(!state.sched.length)box.innerHTML='<div style="font-size:12.5px;color:var(--muted2);padding:6px 2px">Henüz etkinlik yok — alttan ekle 👇</div>';
   state.sched.forEach((s,i)=>{
     const div=document.createElement('div');div.className='s-item';div.style.animationDelay=(i*0.07)+'s';
     div.innerHTML=`<div class="s-time">${s.start} -<br>${s.end}</div>
@@ -399,13 +393,14 @@ function renderTasks(){
   $('#tasks').innerHTML='';$('#tasksFull').innerHTML='';
   state.tasks.forEach((t,i)=>{$('#tasks').appendChild(mk(t,i));$('#tasksFull').appendChild(mk(state.tasks[i],i));});
   const done=state.tasks.filter(t=>t.done).length;
-  $('#taskSummary').textContent=`${done} of ${state.tasks.length} completed — long-press to delete`;
+  $('#taskSummary').textContent=state.tasks.length?`${done} of ${state.tasks.length} completed — long-press to delete`:'Henüz görev yok — + Add task ile ekle 👇';
   $('#taskBar').style.width=(state.tasks.length?done/state.tasks.length*100:0)+'%';
   $('#stDone').textContent=done;
 }
 function updateStats(){renderSched();}
 function renderNotes(){
   const box=$('#notesList');box.innerHTML='';
+  if(!state.notes.length)box.innerHTML='<div style="font-size:12.5px;color:var(--muted2);padding:6px 2px">Henüz not yok — + New note ile ekle 👇</div>';
   state.notes.forEach((n,i)=>{
     const d=document.createElement('div');
     d.style.cssText='background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:14px;padding:12px;animation:rise .4s var(--ease) both';
