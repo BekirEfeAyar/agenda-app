@@ -30,7 +30,7 @@ cd android
 
 APK çıktısı: `android/app/build/outputs/apk/debug/app-debug.apk`
 
-Hazır APK'yı **Releases** sayfasından indirebilirsin.
+Hazır APK'yı **Releases** sayfasından indirebilirsin (`Agenda-v1.0.2.apk` gibi sürümlü isimlerle).
 
 ## Proje yapısı
 
