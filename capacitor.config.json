@@ -1,0 +1,9 @@
+{
+  "appId": "com.murat.agenda",
+  "appName": "Agenda",
+  "webDir": "www",
+  "backgroundColor": "#131314",
+  "android": {
+    "backgroundColor": "#131314"
+  }
+}

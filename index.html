@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Agenda — Daily Planner</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  :root{
+    --bg:#131314;
+    --card:#262628;
+    --card2:#2f2f32;
+    --card3:#3a3a3e;
+    --line:rgba(255,255,255,.08);
+    --text:#f5f3ef;
+    --muted:#a7a5a0;
+    --muted2:#7a7874;
+    --peach:#ffbe98;
+    --peach2:#ff9e7a;
+    --peach-glow:rgba(255,182,142,.35);
+    --blue:#a9cdf2;
+    --mint:#b9e2c9;
+    --radius:22px;
+    --ease:cubic-bezier(.22,1,.36,1);
+  }
+  body{
+    background:#0a0a0b;
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Inter","Segoe UI",Roboto,sans-serif;
+    min-height:100dvh;
+    display:flex;justify-content:center;
+    overflow-x:hidden;
+  }
+  /* desktop backdrop */
+  .stage{
+    width:100%;max-width:430px;min-height:100dvh;
+    background:radial-gradient(120% 60% at 50% 0%, #2e2e31 0%, var(--bg) 55%) , var(--bg);
+    position:relative;
+    overflow:hidden;
+  }
+  @media(min-width:480px){
+    body{padding:24px 0;align-items:flex-start}
+    .stage{border-radius:42px;border:1px solid rgba(255,255,255,.12);min-height:880px;max-height:920px;box-shadow:0 40px 100px rgba(0,0,0,.7), 0 0 0 10px #1a1a1c;}
+  }
+  /* native (APK) fullscreen: hide fake phone chrome */
+  body.native{padding:0;align-items:stretch}
+  body.native .stage{max-width:none;border-radius:0;border:0;min-height:100dvh;max-height:none;box-shadow:none}
+  body.native .notch,body.native .status{display:none}
+  body.native header{padding-top:calc(10px + env(safe-area-inset-top))}
+  .stage::before{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(400px 250px at 80% -20px, rgba(255,190,152,.12), transparent 60%),
+               radial-gradient(500px 300px at 0% 40%, rgba(169,205,242,.07), transparent 60%);
+  }
+  .notch{height:14px;display:flex;justify-content:center;align-items:center}
+  .notch i{width:110px;height:22px;background:#000;border-radius:20px;display:block;margin-top:6px}
+  @media(max-width:479px){.notch{display:none}}
+
+  /* status bar */
+  .status{display:flex;justify-content:space-between;align-items:center;padding:12px 24px 4px;font-size:13px;font-weight:600}
+  .status .icons{display:flex;gap:6px;align-items:center;opacity:.9}
+
+  /* header */
+  header{display:flex;justify-content:space-between;align-items:flex-start;padding:10px 22px 12px}
+  header h1{font-size:28px;letter-spacing:-.5px;font-weight:800;animation:slideDown .7s var(--ease) both}
+  header p{color:var(--muted);font-size:13.5px;margin-top:2px;animation:slideDown .7s .08s var(--ease) both}
+  .bell{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.06);border:1px solid var(--line);display:grid;place-items:center;cursor:pointer;transition:.3s var(--ease);position:relative;animation:slideDown .7s .12s var(--ease) both}
+  .bell:active{transform:scale(.88)}
+  .bell::after{content:"";position:absolute;top:10px;right:11px;width:7px;height:7px;background:var(--peach2);border-radius:50%;box-shadow:0 0 10px var(--peach2)}
+  .bell:hover{background:rgba(255,255,255,.12)}
+
+  /* week card */
+  .week-card{margin:4px 16px 12px;background:linear-gradient(180deg,var(--card2),var(--card));border:1px solid var(--line);border-radius:var(--radius);padding:14px 12px 14px;box-shadow:0 12px 30px rgba(0,0,0,.35);animation:rise .7s .15s var(--ease) both}
+  .week-top{display:flex;align-items:center;justify-content:space-between;padding:0 6px 12px}
+  .week-top button{width:28px;height:28px;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--text);cursor:pointer;font-size:16px;line-height:1;transition:.25s var(--ease)}
+  .week-top button:active{transform:scale(.85);background:var(--peach);color:#222;border-color:transparent}
+  .week-top strong{font-size:13.5px;letter-spacing:.2px}
+  .days{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+  .day{border-radius:16px;padding:8px 2px 7px;text-align:center;cursor:pointer;border:1px solid transparent;transition:all .35s var(--ease);position:relative}
+  .day span{display:block;font-size:9px;letter-spacing:.8px;color:var(--muted2);font-weight:700}
+  .day b{display:block;font-size:16px;margin:2px 0 1px;font-weight:800}
+  .day em{display:block;font-style:normal;font-size:8.5px;letter-spacing:.6px;color:var(--muted2);font-weight:700}
+  .day:active{transform:scale(.9)}
+  .day.active{background:linear-gradient(180deg,#ffd3b3,#ffb68e);color:#2a1e16;box-shadow:0 8px 22px var(--peach-glow);transform:translateY(-2px)}
+  .day.active span,.day.active em{color:rgba(42,30,22,.65)}
+  .day.today:not(.active){border-color:rgba(255,190,152,.4)}
+
+  /* section cards */
+  .card{margin:0 16px 12px;background:linear-gradient(180deg,var(--card2),#242426);border:1px solid var(--line);border-radius:var(--radius);padding:16px 14px;box-shadow:0 12px 30px rgba(0,0,0,.3);animation:rise .7s var(--ease) both}
+  .card:nth-of-type(2){animation-delay:.22s}.card:nth-of-type(3){animation-delay:.3s}
+  .card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+  .card-head h2{font-size:18px;font-weight:800;letter-spacing:-.3px}
+  .dots{color:var(--muted);letter-spacing:2px;cursor:pointer;padding:4px 8px;border-radius:10px}
+  .dots:active{background:rgba(255,255,255,.08)}
+
+  /* schedule */
+  .sched{display:flex;flex-direction:column;gap:10px}
+  .s-item{display:flex;gap:10px;align-items:stretch;animation:rise .5s var(--ease) both}
+  .s-time{font-size:11px;line-height:1.5;color:var(--text);min-width:68px;font-weight:600;white-space:nowrap;padding-top:8px}
+  .s-body{flex:1;background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:14px;padding:10px 11px;display:flex;justify-content:space-between;align-items:center;gap:8px;transition:.3s var(--ease);cursor:pointer}
+  .s-body:hover{background:rgba(255,255,255,.1);transform:translateX(3px)}
+  .s-body:active{transform:scale(.98)}
+  .s-body .t{font-size:13.5px;font-weight:600}
+  .pill{font-size:10.5px;font-weight:700;padding:4px 9px;border-radius:20px;white-space:nowrap;transition:.25s}
+  .pill.pastel{background:var(--blue);color:#1e2a3a}
+  .pill.peach{background:var(--peach);color:#3a2417}
+  .pill.mint{background:var(--mint);color:#1c3325}
+  .s-item.deleting{opacity:0;transform:translateX(60px);transition:.35s var(--ease)}
+  .add-line{margin-top:10px;width:100%;border:1px dashed rgba(255,255,255,.18);background:transparent;color:var(--muted);border-radius:14px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;transition:.3s}
+  .add-line:hover{border-color:var(--peach);color:var(--peach)}
+
+  /* tasks */
+  .tasks{display:flex;flex-direction:column;gap:2px}
+  .task{display:flex;align-items:center;gap:10px;padding:9px 6px;border-radius:12px;cursor:pointer;transition:.25s var(--ease);animation:rise .5s var(--ease) both}
+  .task:hover{background:rgba(255,255,255,.04)}
+  .task:active{transform:scale(.985)}
+  .cbox{width:22px;height:22px;border-radius:50%;border:1.5px solid #6b6965;display:grid;place-items:center;flex-shrink:0;transition:.35s var(--ease);background:transparent}
+  .cbox svg{width:12px;height:12px;opacity:0;transform:scale(.3);transition:.3s var(--ease)}
+  .task.done .cbox{background:var(--blue);border-color:var(--blue)}
+  .task.done .cbox svg{opacity:1;transform:scale(1)}
+  .task .label{flex:1;font-size:13.5px;font-weight:500;transition:.3s}
+  .task.done .label{text-decoration:line-through;color:var(--muted2)}
+  .tag{font-size:10px;font-weight:800;padding:4px 9px;border-radius:20px;letter-spacing:.2px}
+  .tag.checked{background:var(--blue);color:#21344a}
+  .tag.gray{background:#4a4a4e;color:#d6d6d6}
+  .tag.ppeach{background:var(--peach);color:#3a2417}
+  .tag.pblue{background:#9ec3ea;color:#1e2c40}
+
+  .quick{margin-top:12px;background:rgba(0,0,0,.22);border:1px solid var(--line);border-radius:16px;padding:12px;transition:.3s}
+  .quick h4{font-size:14px;margin-bottom:4px}
+  .quick p{font-size:12.5px;color:var(--muted);line-height:1.5;outline:none}
+  .quick p:focus{color:var(--text)}
+  .quick:focus-within{border-color:rgba(255,190,152,.4)}
+
+  /* bottom nav */
+  nav{position:sticky;bottom:0;margin-top:6px;padding:10px 16px calc(14px + env(safe-area-inset-bottom));background:rgba(19,19,20,.82);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);gap:4px;z-index:20}
+  .nav-btn{border:0;background:transparent;color:var(--muted2);display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10.5px;font-weight:600;padding:8px 4px;border-radius:16px;cursor:pointer;transition:.35s var(--ease);position:relative}
+  .nav-btn svg{width:22px;height:22px;transition:.35s var(--ease)}
+  .nav-btn.active{color:var(--peach)}
+  .nav-btn.active svg{transform:translateY(-1px) scale(1.08)}
+  .nav-btn.active::before{content:"";position:absolute;inset:2px;background:var(--peach-glow);filter:blur(2px);border-radius:16px;opacity:.35;z-index:-1;animation:pop .4s var(--ease)}
+  .nav-btn:active{transform:scale(.9)}
+
+  /* views */
+  main{padding-bottom:6px;min-height:420px}
+  .view{display:none}
+  .view.show{display:block}
+  .view.show > *{animation:viewIn .45s var(--ease) both}
+  .view.show > *:nth-child(2){animation-delay:.06s}
+  .view.show > *:nth-child(3){animation-delay:.12s}
+  @keyframes viewIn{from{opacity:0;transform:translateY(18px) scale(.985)}to{opacity:1;transform:none}}
+  @keyframes rise{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
+  @keyframes slideDown{from{opacity:0;transform:translateY(-14px)}to{opacity:1;transform:none}}
+  @keyframes pop{from{opacity:0;transform:scale(.7)}to{opacity:.35;transform:scale(1)}}
+
+  /* sheet modal */
+  .overlay{position:absolute;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:.35s;z-index:40}
+  .overlay.open{opacity:1;pointer-events:auto}
+  .sheet{position:absolute;left:0;right:0;bottom:0;background:#2a2a2d;border:1px solid var(--line);border-bottom:0;border-radius:28px 28px 0 0;padding:12px 20px 28px;transform:translateY(105%);transition:transform .5s var(--ease);z-index:41;max-height:85%;overflow:auto}
+  .sheet.open{transform:none}
+  .grab{width:44px;height:5px;background:rgba(255,255,255,.2);border-radius:10px;margin:4px auto 16px}
+  .sheet h3{font-size:18px;margin-bottom:14px}
+  .field{margin-bottom:12px}
+  .field label{font-size:12px;color:var(--muted);font-weight:700;display:block;margin-bottom:6px;letter-spacing:.3px}
+  .field input,.field select{width:100%;background:#1e1e20;border:1px solid var(--line);color:var(--text);border-radius:14px;padding:13px 14px;font-size:14px;outline:none;transition:.25s}
+  .field input:focus,.field select:focus{border-color:var(--peach);box-shadow:0 0 0 3px var(--peach-glow)}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .btn-primary{width:100%;border:0;border-radius:16px;padding:15px;font-size:15px;font-weight:800;background:linear-gradient(180deg,#ffd0ad,#ffab83);color:#2b1d13;cursor:pointer;transition:.3s var(--ease);margin-top:6px}
+  .btn-primary:active{transform:scale(.97)}
+  .chips{display:flex;gap:8px}
+  .chip{flex:1;border:1px solid var(--line);background:#1e1e20;color:var(--muted);border-radius:12px;padding:10px 4px;font-size:12px;font-weight:700;cursor:pointer;text-align:center;transition:.25s}
+  .chip.sel{background:var(--peach);color:#2b1d13;border-color:transparent}
+
+  /* toast */
+  .toast{position:absolute;left:50%;bottom:110px;transform:translate(-50%,20px);background:#f5f3ef;color:#1a1a1a;font-size:13px;font-weight:700;padding:11px 18px;border-radius:30px;opacity:0;transition:.4s var(--ease);z-index:50;pointer-events:none;white-space:nowrap;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+
+  /* profile */
+  .avatar{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#ffd0ad,#ff8e6b);display:grid;place-items:center;font-size:28px;font-weight:800;color:#3a2417;margin:6px auto 10px;box-shadow:0 10px 30px var(--peach-glow)}
+  .stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+  .stat{background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:16px;padding:12px 6px;text-align:center}
+  .stat b{font-size:18px;display:block}.stat span{font-size:11px;color:var(--muted)}
+
+  .progress{height:8px;background:rgba(255,255,255,.08);border-radius:10px;overflow:hidden;margin-top:10px}
+  .progress i{display:block;height:100%;background:linear-gradient(90deg,var(--peach),var(--peach2));border-radius:10px;transition:width .8s var(--ease)}
+
+  ::-webkit-scrollbar{width:0}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="notch"><i></i></div>
+  <div class="status"><span id="clock">10:00</span>
+    <span class="icons">
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="white"><path d="M8 9.5a1.5 1.5 0 1 0 0 .01M8 5c-2 0-3.5 1-4.5 2.5L2 9H14l-1.5-1.5C11.5 6 10 5 8 5Zm0-4C5 1 2.5 2.5 1 5l1.2 1C3.5 3.7 5.6 2.5 8 2.5s4.5 1.2 5.8 3.5L15 5C13.5 2.5 11 1 8 1Z"/></svg>
+      <svg width="20" height="12" viewBox="0 0 20 12" fill="white"><rect x="0" y="1" width="14" height="10" rx="2.5" fill="none" stroke="white"/><rect x="2" y="3" width="9" height="6" rx="1" /><rect x="16" y="4" width="3" height="4" rx="1.2"/></svg>
+    </span>
+  </div>
+
+  <header>
+    <div><h1>Agenda</h1><p id="dateLine">Wednesday, Oct 25</p></div>
+    <div class="bell" id="bell">🔔</div>
+  </header>
+
+  <main>
+    <!-- CALENDAR VIEW -->
+    <section class="view show" id="view-calendar">
+      <div class="week-card">
+        <div class="week-top"><button id="prevW">‹</button><strong id="weekLabel">Oct 23 - Oct 29</strong><button id="nextW">›</button></div>
+        <div class="days" id="days"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>Daily Schedule</h2><span class="dots" id="schedMenu">•••</span></div>
+        <div class="sched" id="sched"></div>
+        <button class="add-line" id="openSched">+ Add event</button>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>Notes & Tasks</h2><span class="dots">•••</span></div>
+        <h4 style="font-size:14px;margin:0 6px 6px">Today's Tasks</h4>
+        <div class="tasks" id="tasks"></div>
+        <button class="add-line" id="openTask">+ Add task</button>
+        <div class="quick">
+          <h4>Quick Notes</h4>
+          <p id="quickNote" contenteditable="true">Meeting ideas for next week...</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- TASKS VIEW -->
+    <section class="view" id="view-tasks">
+      <div class="card">
+        <div class="card-head"><h2>All Tasks</h2><span class="dots">•••</span></div>
+        <div style="font-size:12.5px;color:var(--muted);margin-bottom:6px" id="taskSummary"></div>
+        <div class="progress"><i id="taskBar" style="width:20%"></i></div>
+        <div style="height:12px"></div>
+        <div class="tasks" id="tasksFull"></div>
+        <button class="add-line" id="openTask2">+ Add task</button>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>Focus Timer</h2></div>
+        <div style="text-align:center;padding:8px">
+          <div id="timer" style="font-size:44px;font-weight:800;letter-spacing:-1px">25:00</div>
+          <div style="color:var(--muted);font-size:12px;margin-bottom:12px">Stay focused, take breaks</div>
+          <div style="display:flex;gap:10px"><button class="btn-primary" id="timerBtn" style="margin:0">Start</button></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- NOTES VIEW -->
+    <section class="view" id="view-notes">
+      <div class="card">
+        <div class="card-head"><h2>Notes</h2><span class="dots">•••</span></div>
+        <div id="notesList" style="display:flex;flex-direction:column;gap:10px"></div>
+        <button class="add-line" id="addNoteBtn">+ New note</button>
+      </div>
+    </section>
+
+    <!-- PROFILE VIEW -->
+    <section class="view" id="view-profile">
+      <div class="card" style="text-align:center">
+        <div class="avatar">M</div>
+        <h2>Murat</h2>
+        <p style="color:var(--muted);font-size:13px;margin-top:4px">Product Designer • Istanbul</p>
+        <div class="stat-row">
+          <div class="stat"><b id="stEvents">3</b><span>Events</span></div>
+          <div class="stat"><b id="stDone">1</b><span>Done</span></div>
+          <div class="stat"><b>86%</b><span>Focus</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>Settings</h2></div>
+        <div class="tasks">
+          <div class="task"><div class="label">🔕 &nbsp;Notifications</div><div class="tag gray">On</div></div>
+          <div class="task"><div class="label">🌙 &nbsp;Dark theme</div><div class="tag ppeach">Active</div></div>
+          <div class="task"><div class="label">☁️ &nbsp;Sync</div><div class="tag pblue">Auto</div></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <nav>
+    <button class="nav-btn active" data-v="calendar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="17" rx="4"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>Calendar</button>
+    <button class="nav-btn" data-v="tasks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg>Tasks</button>
+    <button class="nav-btn" data-v="notes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6M9 13h7M9 17h5"/></svg>Notes</button>
+    <button class="nav-btn" data-v="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-6 8-6s8 2 8 6"/></svg>Profile</button>
+  </nav>
+
+  <div class="overlay" id="overlay"></div>
+  <div class="sheet" id="sheet">
+    <div class="grab"></div>
+    <h3 id="sheetTitle">Add event</h3>
+    <div id="schedForm">
+      <div class="field"><label>TITLE</label><input id="fTitle" placeholder="e.g. Yoga Session"></div>
+      <div class="row2">
+        <div class="field"><label>START</label><input id="fStart" value="10:00 AM"></div>
+        <div class="field"><label>END</label><input id="fEnd" value="11:00 AM"></div>
+      </div>
+      <div class="field"><label>CATEGORY</label>
+        <div class="chips" id="catChips">
+          <div class="chip sel" data-c="Pastel">Pastel</div>
+          <div class="chip" data-c="Peach">Peach</div>
+          <div class="chip" data-c="Mint">Mint</div>
+        </div>
+      </div>
+      <button class="btn-primary" id="saveSched">Add to Schedule</button>
+    </div>
+    <div id="taskForm" style="display:none">
+      <div class="field"><label>TASK</label><input id="tTitle" placeholder="e.g. Finalize UI Mockups"></div>
+      <div class="field"><label>TAG</label>
+        <div class="chips" id="tagChips">
+          <div class="chip sel" data-t="ppeach">Pastel Peach</div>
+          <div class="chip" data-t="pblue">Pastel Blue</div>
+          <div class="chip" data-t="gray">Blue/Gray</div>
+        </div>
+      </div>
+      <button class="btn-primary" id="saveTask">Add Task</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+if(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform())document.body.classList.add('native');
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+let state = JSON.parse(localStorage.getItem('agenda-v1')||'null') || {
+  sched:[
+    {start:'08:30 AM',end:'09:15 AM',title:'Yoga Session',cat:'Pastel'},
+    {start:'09:30 AM',end:'10:30 AM',title:'Team Sync • Marketing',cat:'Peach'},
+    {start:'11:00 AM',end:'12:30 PM',title:'Product Sync • Design',cat:'Pastel'},
+  ],
+  tasks:[
+    {t:'1. Finalize UI Mockups',done:false,tag:'checked',tagLabel:'Checked'},
+    {t:'2. Review Feedback',done:false,tag:'gray',tagLabel:'Blue/Gray'},
+    {t:'3. Design Case Study',done:false,tag:'ppeach',tagLabel:'Pastel Peach'},
+    {t:'4. Client Call (2PM)',done:false,tag:'pblue',tagLabel:'Pastel Blue'},
+  ],
+  notes:[{t:'Meeting ideas for next week...',d:'Oct 25'}],
+  quick:'Meeting ideas for next week...'
+};
+function save(){localStorage.setItem('agenda-v1',JSON.stringify(state));}
+function toast(m){const el=$('#toast');el.textContent=m;el.classList.add('show');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('show'),1800);}
+
+// clock
+function tick(){const d=new Date();$('#clock').textContent=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
+tick();setInterval(tick,10000);
+
+// week
+let base=new Date(2023,9,23); let selected=2;
+const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const dows=['SUN','MON','TUE','WED','THU','FRI','SAT'];
+function renderWeek(){
+  const box=$('#days');box.innerHTML='';
+  for(let i=0;i<7;i++){
+    const d=new Date(base);d.setDate(base.getDate()+i);
+    const el=document.createElement('div');
+    el.className='day'+(i===selected?' active':'')+((new Date().toDateString()===d.toDateString())?' today':'');
+    el.style.animation=`rise .5s var(--ease) ${i*0.04}s both`;
+    el.innerHTML=`<span>${dows[d.getDay()]}</span><b>${d.getDate()}</b><em>${dows[(d.getDay()+6)%7].slice(0,3)}</em>`;
+    el.onclick=()=>{selected=i;renderWeek();updateDateLine();
+      // micro bounce on schedule
+      $$('#sched .s-item').forEach((n,k)=>{n.style.animation='none';n.offsetHeight;n.style.animation=`rise .45s var(--ease) ${k*0.06}s both`;});
+    };
+    box.appendChild(el);
+  }
+  const e=new Date(base);e.setDate(base.getDate()+6);
+  $('#weekLabel').textContent=`${months[base.getMonth()]} ${base.getDate()} - ${months[e.getMonth()]} ${e.getDate()}`;
+}
+function updateDateLine(){const d=new Date(base);d.setDate(base.getDate()+selected);
+  $('#dateLine').textContent=d.toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'});}
+$('#prevW').onclick=()=>{base.setDate(base.getDate()-7);renderWeek();updateDateLine();};
+$('#nextW').onclick=()=>{base.setDate(base.getDate()+7);renderWeek();updateDateLine();};
+renderWeek();updateDateLine();
+
+// schedule
+function renderSched(){
+  const box=$('#sched');box.innerHTML='';
+  state.sched.forEach((s,i)=>{
+    const div=document.createElement('div');div.className='s-item';div.style.animationDelay=(i*0.07)+'s';
+    div.innerHTML=`<div class="s-time">${s.start} -<br>${s.end}</div>
+      <div class="s-body"><span class="t">${s.title}</span><span class="pill ${s.cat==='Peach'?'peach':s.cat==='Mint'?'mint':'pastel'}">• ${s.cat}</span></div>`;
+    div.querySelector('.s-body').onclick=()=>{
+      if(confirm('Etkinlik silinsin mi?')){div.classList.add('deleting');setTimeout(()=>{state.sched.splice(i,1);save();renderSched();updateStats();},300);}
+    };
+    box.appendChild(div);
+  });
+  $('#stEvents').textContent=state.sched.length;
+}
+function renderTasks(){
+  const mk=(t,i)=>{const d=document.createElement('div');d.className='task'+(t.done?' done':'');d.style.animationDelay=(i*0.05)+'s';
+    d.innerHTML=`<div class="cbox"><svg viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2.5"><path d="M2 6.5 5 9l5-6"/></svg></div>
+      <div class="label">${t.t}</div><div class="tag ${t.tag}">${t.done?'Done':t.tagLabel}</div>`;
+    d.onclick=()=>{t.done=!t.done;save();renderTasks();updateStats();
+      if(t.done) toast('Nice! Task completed ✓');};
+    d.oncontextmenu=(e)=>{e.preventDefault();state.tasks.splice(i,1);save();renderTasks();updateStats();toast('Task deleted');};
+    return d;};
+  $('#tasks').innerHTML='';$('#tasksFull').innerHTML='';
+  state.tasks.forEach((t,i)=>{$('#tasks').appendChild(mk(t,i));$('#tasksFull').appendChild(mk(state.tasks[i],i));});
+  const done=state.tasks.filter(t=>t.done).length;
+  $('#taskSummary').textContent=`${done} of ${state.tasks.length} completed — long-press to delete`;
+  $('#taskBar').style.width=(state.tasks.length?done/state.tasks.length*100:0)+'%';
+  $('#stDone').textContent=done;
+}
+function updateStats(){renderSched();}
+function renderNotes(){
+  const box=$('#notesList');box.innerHTML='';
+  state.notes.forEach((n,i)=>{
+    const d=document.createElement('div');
+    d.style.cssText='background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:14px;padding:12px;animation:rise .4s var(--ease) both';
+    d.innerHTML=`<div style="font-size:13.5px;line-height:1.5" contenteditable="true">${n.t}</div><div style="font-size:11px;color:var(--muted2);margin-top:6px">${n.d} • tap to edit, double-tap to delete</div>`;
+    d.querySelector('div').oninput=(e)=>{n.t=e.target.innerText;save();};
+    d.ondblclick=()=>{state.notes.splice(i,1);save();renderNotes();toast('Note deleted');};
+    box.appendChild(d);
+  });
+}
+renderSched();renderTasks();renderNotes();
+$('#quickNote').innerText=state.quick;
+$('#quickNote').oninput=e=>{state.quick=e.target.innerText;save();};
+
+// nav
+$$('.nav-btn').forEach(b=>b.onclick=()=>{
+  $$('.nav-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');
+  $$('.view').forEach(v=>v.classList.remove('show'));
+  $('#view-'+b.dataset.v).classList.add('show');
+  if(navigator.vibrate) navigator.vibrate(8);
+});
+
+// sheet
+const overlay=$('#overlay'),sheet=$('#sheet');
+let mode='sched';
+function openSheet(m){mode=m;
+  $('#schedForm').style.display=m==='sched'?'block':'none';
+  $('#taskForm').style.display=m==='task'?'block':'none';
+  $('#sheetTitle').textContent=m==='sched'?'Add event':'Add task';
+  overlay.classList.add('open');sheet.classList.add('open');}
+function closeSheet(){overlay.classList.remove('open');sheet.classList.remove('open');}
+overlay.onclick=closeSheet;
+$('#openSched').onclick=()=>openSheet('sched');
+$('#openTask').onclick=()=>openSheet('task');
+$('#openTask2').onclick=()=>openSheet('task');
+$('#schedMenu').onclick=()=>openSheet('sched');
+$$('#catChips .chip').forEach(c=>c.onclick=()=>{$$('#catChips .chip').forEach(x=>x.classList.remove('sel'));c.classList.add('sel');});
+$$('#tagChips .chip').forEach(c=>c.onclick=()=>{$$('#tagChips .chip').forEach(x=>x.classList.remove('sel'));c.classList.add('sel');});
+$('#saveSched').onclick=()=>{
+  const t=$('#fTitle').value.trim()||'New Event';
+  state.sched.push({start:$('#fStart').value||'10:00 AM',end:$('#fEnd').value||'11:00 AM',title:t,cat:$('#catChips .sel').dataset.c});
+  save();renderSched();updateStats();closeSheet();toast('Event added ✓');$('#fTitle').value='';
+};
+$('#saveTask').onclick=()=>{
+  const t=$('#tTitle').value.trim()||'New Task';
+  const chip=$('#tagChips .sel');
+  state.tasks.push({t,done:false,tag:chip.dataset.t,tagLabel:chip.textContent});
+  save();renderTasks();closeSheet();toast('Task added ✓');$('#tTitle').value='';
+};
+$('#addNoteBtn').onclick=()=>{state.notes.unshift({t:'New idea...',d:'Just now'});save();renderNotes();toast('Note added ✓');};
+$('#bell').onclick=()=>toast(state.sched.length+' events today • '+state.tasks.filter(t=>!t.done).length+' tasks pending');
+
+// timer
+let secs=25*60,run=null;
+function drawT(){$('#timer').textContent=String(Math.floor(secs/60)).padStart(2,'0')+':'+String(secs%60).padStart(2,'0');}
+$('#timerBtn').onclick=e=>{if(run){clearInterval(run);run=null;e.target.textContent='Start';}else{run=setInterval(()=>{secs--;if(secs<0)secs=25*60;drawT();},1000);e.target.textContent='Pause';toast('Focus started 🎧');}};
+drawT();
+
+// swipe down to close sheet
+let y0=null;sheet.addEventListener('touchstart',e=>y0=e.touches[0].clientY,{passive:true});
+sheet.addEventListener('touchmove',e=>{if(y0&&e.touches[0].clientY-y0>90)closeSheet();},{passive:true});
+</script>
+</body>
+</html>
